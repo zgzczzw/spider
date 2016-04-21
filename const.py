@@ -33,3 +33,5 @@ class const:
 
     isDebug = True;
     isRelease = True;
+    simple_check_charset = True
+    need_check_charset = True

@@ -1,7 +1,8 @@
-# coding = utf-8
+#-*- coding: UTF-8 -*-
 import urllib
 import re
 import urlparse
+import chardet
 
 import variables
 from const import const
@@ -13,17 +14,41 @@ invalid_starts = ["\""]
 
 results = []
 
+global count
+count = 0
+
 
 def get_html(url):
     global HOST
     try:
         page = urllib.urlopen(url)
         html = page.read()
+        if const.need_check_charset:
+            charset = check_charset(html)
+            html = html.decode(charset).encode("UTF-8")
         result = urlparse.urlparse(url)
         HOST = result.scheme + "://" + result.netloc
         return html
     except:
         return ""
+
+
+def check_charset(data):
+    if const.simple_check_charset:
+        types = ['utf-8', 'gb2312', 'gbk', 'iso-8859-1']  # 可以添加其他字符编码
+        for charset1 in types:
+            try:
+                data.decode(charset1)
+            except Exception, ex:
+                # print Exception,":",ex
+                continue
+            if not charset1:
+                return 'utf-8'
+            else:
+                return charset1
+    else:
+        charset2 = chardet.detect(data)
+        return charset2['encoding']
 
 
 def url_join(base, url):
@@ -55,6 +80,7 @@ def do_write_file():
             f.write(url)
             f.write("\n")
     f.close()
+    print len(results)
 
 
 def check_host(host, url):
@@ -77,6 +103,8 @@ def get_urls(parent, html, index):
             if url not in results:
                 if not check_host(variables.host, url):
                     continue
+                url = urllib.quote(url)
+                url = urllib.unquote(url)
                 if const.isDebug:
                     print "parent: " + parent + "\t" + "url: " + url
                 results.append(url)
